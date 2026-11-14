@@ -238,6 +238,13 @@
   const skipBtn = document.getElementById("skip-btn");
   const nextBtn = document.getElementById("next-btn");
 
+  function shufflePlayers(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
   function closeAutocomplete() {
     autocompleteList.innerHTML = "";
     autocompleteList.classList.add("hidden");
@@ -334,11 +341,18 @@
     }
   });
 
+  function initGame() {
+    shufflePlayers(players);
+    currentRound = 0;
+    score = 0;
+    loadQuestion();
+  }
+
   function loadQuestion() {
     if (currentRound >= players.length) {
       alert(`จบเกม! คุณทำได้ทั้งหมด ${score} คะแนน`);
-      currentRound = 0;
-      score = 0;
+      initGame();
+      return;
     }
 
     hintIndex = 0;
@@ -424,7 +438,452 @@
     loadQuestion();
   }
 
-  loadQuestion();
+  initGame();
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกมทายชื่อนักฟุตบอล</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+      background: #111;
+      color: #fff;
+    }
+    .card {
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 500px;
+      margin: auto;
+    }
+    .hint-box {
+      background: #333;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+      text-align: left;
+    }
+    .autocomplete-wrapper {
+      position: relative;
+      width: 100%;
+      margin: 8px 0;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+      margin: 0;
+    }
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #444;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background-color: #2b2b2b;
+      border-radius: 0 0 5px 5px;
+      max-height: 200px;
+      overflow-y: auto;
+      text-align: left;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    }
+    .autocomplete-item {
+      padding: 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #3a3a3a;
+      color: #fff;
+    }
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+    .autocomplete-item:hover,
+    .autocomplete-active {
+      background-color: #444;
+    }
+    .autocomplete-item strong {
+      color: #ffc107;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: none;
+      font-size: 16px;
+      box-sizing: border-box;
+      background: #e0e0e0;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn-submit {
+      background: #28a745;
+      color: white;
+    }
+    .btn-hint {
+      background: #ffc107;
+      color: #000;
+    }
+    .hidden {
+      display: none;
+    }
+    #score-board {
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    #points-info {
+      color: #ffc107;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>⚽ เกมทายชื่อนักเตะ (3 คำใบ้)</h2>
+  <div id="score-board">คะแนน: <span id="score">0</span> | ข้อที่: <span id="round">1</span>/<span id="total-rounds">8</span></div>
+  <div id="points-info">คำใบ้นี้มีค่า: <span id="current-points">3</span> คะแนน</div>
+
+  <div id="hints-area"></div>
+
+  <div class="autocomplete-wrapper">
+    <input type="text" id="answer" placeholder="พิมพ์ชื่อนักเตะ (ภาษาอังกฤษ)..." autocomplete="off">
+    <div id="autocomplete-list" class="autocomplete-items hidden"></div>
+  </div>
+
+  <button class="btn-submit" id="submit-btn" onclick="checkAnswer()">ส่งคำตอบ</button>
+  <button class="btn-hint" id="hint-btn" onclick="giveHint()">ขอคำใบ้ถัดไป (-1 คะแนน)</button>
+  <button id="skip-btn" onclick="skipQuestion()">ยอมแพ้ / เฉลย</button>
+  <button id="next-btn" class="hidden" onclick="nextQuestion()">ข้อถัดไป</button>
+</div>
+
+<script>
+  const players = [
+    {
+      name: "Erling Haaland",
+      aliases: ["haaland", "erling haaland"],
+      hints: [
+        "1. เป็นกองหน้าเจ้าของส่วนสูง 195 ซม. เล่นในลีกยุโรป",
+        "2. คว้าแชมป์พรีเมียร์ลีกและยูฟ่าแชมเปียนส์ลีกกับ แมนเชสเตอร์ ซิตี้",
+        "3. กองหน้าทีมชาตินอร์เวย์ เจ้าของฉายา จอมมารบู"
+      ]
+    },
+    {
+      name: "Mohamed Salah",
+      aliases: ["salah", "mohamed salah"],
+      hints: [
+        "1. เป็นแนวรุกริมเส้นฝั่งขวา ชาวอียิปต์",
+        "2. ได้ฉายาว่า King Egyptian และได้รองเท้าทองคำหลายสมัย",
+        "3. เล่นให้ ลิเวอร์พูล สวมเบอร์ 11"
+      ]
+    },
+    {
+      name: "Lionel Messi",
+      aliases: ["messi", "lionel messi"],
+      hints: [
+        "1. เป็นนักเตะเจ้าของรางวัลบัลลงดอร์มากที่สุดในประวัติศาสตร์",
+        "2. พาทีมชาติอาร์เจนตินาคว้าแชมป์ฟุตบอลโลก 2022",
+        "3. ตำนานหมายเลข 10 ของบาร์เซโลนา ปัจจุบันเล่นให้ อินเตอร์ ไมอามี"
+      ]
+    },
+    {
+      name: "Cristiano Ronaldo",
+      aliases: ["ronaldo", "cristiano ronaldo", "cr7"],
+      hints: [
+        "1. เป็นดาวซัลโวสูงสุดตลอดกาลในระดับทีมชาติและยูฟ่าแชมเปียนส์ลีก",
+        "2. เคยค้าแข้งกับ แมนเชสเตอร์ ยูไนเต็ด, เรอัล มาดริด และ ยูเวนตุส",
+        "3. กัปตันทีมชาติโปรตุเกส เจ้าของท่าดีใจ Siuuu และฉายา CR7"
+      ]
+    },
+    {
+      name: "Kylian Mbappe",
+      aliases: ["mbappe", "kylian mbappe"],
+      hints: [
+        "1. เป็นแนวรุกที่มีความเร็วจัดจ้าน ยิงแฮตทริกในนัดชิงฟุตบอลโลก 2022",
+        "2. คว้าแชมป์ฟุตบอลโลกตั้งแต่อายุ 19 ปี กับทีมชาติฝรั่งเศส",
+        "3. อดีตดาวยิงสูงสุดของ ปารีส แซงต์-แชร์กแมง ก่อนย้ายไป เรอัล มาดริด"
+      ]
+    },
+    {
+      name: "Kevin De Bruyne",
+      aliases: ["de bruyne", "kevin de bruyne"],
+      hints: [
+        "1. เป็นกองกลางตัวรุกที่มีจุดเด่นเรื่องการจ่ายบอลทะลุช่องและการเปิดบอลที่แม่นยำ",
+        "2. กัปตันทีมชาติเบลเยียม",
+        "3. จอมทัพหมายเลข 17 ของ แมนเชสเตอร์ ซิตี้"
+      ]
+    },
+    {
+      name: "Jude Bellingham",
+      aliases: ["bellingham", "jude bellingham"],
+      hints: [
+        "1. เป็นกองกลางดาวรุ่งชาวอังกฤษที่ย้ายจากบุนเดสลีกาไปสเปนด้วยค่าตัวมหาศาล",
+        "2. คว้ารางวัล Kopa Trophy และ Golden Boy ในปี 2023",
+        "3. สวมเสื้อหมายเลข 5 ตำนานของซีดาน ให้กับ เรอัล มาดริด"
+      ]
+    },
+    {
+      name: "Son Heung-min",
+      aliases: ["son", "son heung-min", "heung-min son"],
+      hints: [
+        "1. เป็นนักเตะเอเชียคนแรกที่คว้ารางวัลรองเท้าทองคำพรีเมียร์ลีก",
+        "2. กัปตันทีมชาติเกาหลีใต้",
+        "3. กัปตันทีมและแนวรุกตัวเก่งของ ท็อตแนม ฮ็อตสเปอร์"
+      ]
+    }
+  ];
+
+  const searchableNames = [
+    ...players.map(p => p.name),
+    "Bukayo Saka",
+    "Harry Kane",
+    "Bruno Fernandes",
+    "Vinicius Junior",
+    "Rodri",
+    "Phil Foden",
+    "Cole Palmer",
+    "Lamine Yamal",
+    "Virgil van Dijk",
+    "Alisson Becker",
+    "Martin Odegaard",
+    "Declan Rice",
+    "Antoine Griezmann",
+    "Robert Lewandowski"
+  ].filter((value, index, self) => self.indexOf(value) === index).sort();
+
+  let currentRound = 0;
+  let score = 0;
+  let hintIndex = 0;
+  let currentPoints = 3;
+  let currentFocus = -1;
+
+  const hintsArea = document.getElementById("hints-area");
+  const answerInput = document.getElementById("answer");
+  const autocompleteList = document.getElementById("autocomplete-list");
+  const scoreEl = document.getElementById("score");
+  const roundEl = document.getElementById("round");
+  const totalRoundsEl = document.getElementById("total-rounds");
+  const currentPointsEl = document.getElementById("current-points");
+  const hintBtn = document.getElementById("hint-btn");
+  const submitBtn = document.getElementById("submit-btn");
+  const skipBtn = document.getElementById("skip-btn");
+  const nextBtn = document.getElementById("next-btn");
+
+  function shufflePlayers(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function closeAutocomplete() {
+    autocompleteList.innerHTML = "";
+    autocompleteList.classList.add("hidden");
+    currentFocus = -1;
+  }
+
+  function renderAutocomplete(val) {
+    autocompleteList.innerHTML = "";
+    currentFocus = -1;
+
+    if (!val) {
+      closeAutocomplete();
+      return;
+    }
+
+    const query = val.toLowerCase();
+    const startsWithMatches = searchableNames.filter(name => name.toLowerCase().startsWith(query));
+    const includesMatches = searchableNames.filter(name => !name.toLowerCase().startsWith(query) && name.toLowerCase().includes(query));
+    const matches = [...startsWithMatches, ...includesMatches];
+
+    if (matches.length === 0) {
+      closeAutocomplete();
+      return;
+    }
+
+    matches.forEach(name => {
+      const item = document.createElement("div");
+      item.className = "autocomplete-item";
+
+      const matchIndex = name.toLowerCase().indexOf(query);
+      const beforeMatch = name.slice(0, matchIndex);
+      const matchedText = name.slice(matchIndex, matchIndex + val.length);
+      const afterMatch = name.slice(matchIndex + val.length);
+
+      item.innerHTML = `${beforeMatch}<strong>${matchedText}</strong>${afterMatch}`;
+
+      item.addEventListener("click", function() {
+        answerInput.value = name;
+        closeAutocomplete();
+        answerInput.focus();
+      });
+
+      autocompleteList.appendChild(item);
+    });
+
+    autocompleteList.classList.remove("hidden");
+  }
+
+  function addActive(items) {
+    if (!items || items.length === 0) return;
+    removeActive(items);
+    if (currentFocus >= items.length) currentFocus = 0;
+    if (currentFocus < 0) currentFocus = items.length - 1;
+    items[currentFocus].classList.add("autocomplete-active");
+    items[currentFocus].scrollIntoView({ block: "nearest" });
+  }
+
+  function removeActive(items) {
+    for (let i = 0; i < items.length; i++) {
+      items[i].classList.remove("autocomplete-active");
+    }
+  }
+
+  answerInput.addEventListener("input", function() {
+    renderAutocomplete(this.value.trim());
+  });
+
+  answerInput.addEventListener("keydown", function(e) {
+    const items = autocompleteList.getElementsByClassName("autocomplete-item");
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      currentFocus++;
+      addActive(items);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      currentFocus--;
+      addActive(items);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (currentFocus > -1 && items[currentFocus]) {
+        items[currentFocus].click();
+      } else if (!answerInput.disabled) {
+        closeAutocomplete();
+        checkAnswer();
+      }
+    } else if (e.key === "Escape") {
+      closeAutocomplete();
+    }
+  });
+
+  document.addEventListener("click", function(e) {
+    if (e.target !== answerInput && !autocompleteList.contains(e.target)) {
+      closeAutocomplete();
+    }
+  });
+
+  function initGame() {
+    shufflePlayers(players);
+    currentRound = 0;
+    score = 0;
+    loadQuestion();
+  }
+
+  function loadQuestion() {
+    if (currentRound >= players.length) {
+      alert(`จบเกม! คุณทำได้ทั้งหมด ${score} คะแนน`);
+      initGame();
+      return;
+    }
+
+    hintIndex = 0;
+    currentPoints = 3;
+    hintsArea.innerHTML = "";
+    answerInput.value = "";
+    answerInput.disabled = false;
+    closeAutocomplete();
+
+    scoreEl.textContent = score;
+    roundEl.textContent = currentRound + 1;
+    totalRoundsEl.textContent = players.length;
+    currentPointsEl.textContent = currentPoints;
+
+    hintBtn.disabled = false;
+    hintBtn.classList.remove("hidden");
+    submitBtn.classList.remove("hidden");
+    skipBtn.classList.remove("hidden");
+    nextBtn.classList.add("hidden");
+
+    showHint();
+  }
+
+  function showHint() {
+    const p = players[currentRound];
+    const div = document.createElement("div");
+    div.className = "hint-box";
+    div.textContent = p.hints[hintIndex];
+    hintsArea.appendChild(div);
+  }
+
+  function giveHint() {
+    const p = players[currentRound];
+    if (hintIndex < p.hints.length - 1) {
+      hintIndex++;
+      currentPoints--;
+      currentPointsEl.textContent = currentPoints;
+      showHint();
+      if (hintIndex === p.hints.length - 1) {
+        hintBtn.disabled = true;
+      }
+    }
+  }
+
+  function checkAnswer() {
+    closeAutocomplete();
+    const userAns = answerInput.value.trim().toLowerCase();
+    const currentPlayer = players[currentRound];
+
+    if (!userAns) return;
+
+    const isCorrect =
+      userAns === currentPlayer.name.toLowerCase() ||
+      (currentPlayer.aliases && currentPlayer.aliases.includes(userAns));
+
+    if (isCorrect) {
+      score += currentPoints;
+      scoreEl.textContent = score;
+      alert(`ถูกต้อง! ได้รับ ${currentPoints} คะแนน`);
+      endRound();
+    } else {
+      alert("ยังไม่ถูกต้อง ลองใหม่อีกครั้ง!");
+    }
+  }
+
+  function skipQuestion() {
+    closeAutocomplete();
+    alert(`เฉลยคือ: ${players[currentRound].name}`);
+    endRound();
+  }
+
+  function endRound() {
+    answerInput.disabled = true;
+    closeAutocomplete();
+    hintBtn.classList.add("hidden");
+    submitBtn.classList.add("hidden");
+    skipBtn.classList.add("hidden");
+    nextBtn.classList.remove("hidden");
+  }
+
+  function nextQuestion() {
+    currentRound++;
+    loadQuestion();
+  }
+
+  initGame();
 </script>
 
 </body>
